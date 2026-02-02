@@ -18,6 +18,7 @@ return new class extends Migration
             $table->timestamp('check_in_at')->nullable();
             $table->timestamp('check_out_at')->nullable();
             $table->enum('status', ['present', 'sick', 'leave', 'absent']);
+            $table->unique(['employee_id', 'date']);
             $table->timestamps();
         });
     }

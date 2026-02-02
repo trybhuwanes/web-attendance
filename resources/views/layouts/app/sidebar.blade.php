@@ -15,7 +15,49 @@
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
+                    @if (auth()->user()?->isEmployee())
+                        <flux:sidebar.item
+                            icon="calendar"
+                            :href="route('attendance.index')"
+                            :current="request()->routeIs('attendance.*')"
+                            wire:navigate
+                        >
+                            {{ __('Attendance') }}
+                        </flux:sidebar.item>
+                    @endif
                 </flux:sidebar.group>
+
+                @if (auth()->user()?->isAdmin())
+                    <flux:sidebar.group :heading="__('Master Data')" class="grid">
+                        <flux:sidebar.item
+                            icon="users"
+                            :href="route('employees.index')"
+                            :current="request()->routeIs('employees.*')"
+                            wire:navigate
+                        >
+                            {{ __('Employees') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item
+                            icon="user-plus"
+                            :href="route('users.create')"
+                            :current="request()->routeIs('users.create')"
+                            wire:navigate
+                        >
+                            {{ __('Create User') }}
+                        </flux:sidebar.item>
+                    </flux:sidebar.group>
+
+                    <flux:sidebar.group :heading="__('Reports')" class="grid">
+                        <flux:sidebar.item
+                            icon="chart-bar"
+                            :href="route('attendance.report')"
+                            :current="request()->routeIs('attendance.report')"
+                            wire:navigate
+                        >
+                            {{ __('Attendance Report') }}
+                        </flux:sidebar.item>
+                    </flux:sidebar.group>
+                @endif
             </flux:sidebar.nav>
 
             <flux:spacer />
