@@ -56,6 +56,14 @@
                         >
                             {{ __('Attendance Report') }}
                         </flux:sidebar.item>
+                        <flux:sidebar.item
+                            icon="calendar"
+                            :href="route('attendance.report.monthly')"
+                            :current="request()->routeIs('attendance.report.monthly')"
+                            wire:navigate
+                        >
+                            {{ __('Monthly Attendance') }}
+                        </flux:sidebar.item>
                     </flux:sidebar.group>
                 @endif
             </flux:sidebar.nav>
