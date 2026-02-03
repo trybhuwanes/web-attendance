@@ -2,16 +2,13 @@
 
 use App\Models\Attendance;
 use App\Models\Employee;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use App\Models\Holiday;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\Attributes\Url;
-use Livewire\WithPagination;
 
 new class extends Component {
-    use WithPagination;
-
     private const TIMEZONE = 'Asia/Jakarta';
 
     public Employee $employee;
@@ -37,27 +34,54 @@ new class extends Component {
     {
         $month = (int) $value;
         $this->month = max(1, min(12, $month));
-        $this->resetPage();
     }
 
     public function updatedYear($value): void
     {
         $year = (int) $value;
         $this->year = max(2000, min(2100, $year));
-        $this->resetPage();
     }
 
     #[Computed]
-    public function attendances(): LengthAwarePaginator
+    public function attendanceRows()
     {
-        $start = $this->startDate()->toDateString();
-        $end = $this->endDate()->toDateString();
+        $start = $this->startDate();
+        $end = $this->endDate();
+        $today = Carbon::now(self::TIMEZONE)->toDateString();
 
-        return Attendance::query()
+        $holidayDates = Holiday::query()
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->pluck('date')
+            ->map(fn ($date) => Carbon::parse($date, self::TIMEZONE)->toDateString())
+            ->unique()
+            ->toArray();
+
+        $attendanceByDate = Attendance::query()
             ->where('employee_id', $this->employee->id)
-            ->whereBetween('date', [$start, $end])
-            ->orderBy('date')
-            ->paginate(15);
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->get()
+            ->keyBy(fn ($attendance) => $attendance->date->toDateString());
+
+        $rows = [];
+        $current = $start->copy();
+
+        while ($current->lte($end)) {
+            $date = $current->toDateString();
+            $isWeekend = $current->isWeekend();
+            $isHoliday = in_array($date, $holidayDates, true);
+
+            $rows[] = [
+                'date' => $current->copy(),
+                'attendance' => $attendanceByDate->get($date),
+                'is_future' => $date > $today,
+                'is_weekend' => $isWeekend,
+                'is_holiday' => $isHoliday,
+            ];
+
+            $current->addDay();
+        }
+
+        return $rows;
     }
 
     private function startDate(): Carbon
@@ -120,21 +144,43 @@ new class extends Component {
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
-                    @forelse ($this->attendances as $attendance)
-                        <tr wire:key="attendance-detail-{{ $attendance->id }}" class="hover:bg-zinc-50 dark:hover:bg-zinc-800/60">
-                            <td class="px-4 py-3 text-zinc-700 dark:text-zinc-300">
-                                {{ $attendance->date->format('d M Y') }}
+                    @forelse ($this->attendanceRows as $row)
+                        @php
+                            $attendance = $row['attendance'];
+                            $isFuture = $row['is_future'];
+                            $isWeekend = $row['is_weekend'];
+                            $isHoliday = $row['is_holiday'];
+                        @endphp
+                        <tr
+                            wire:key="attendance-detail-{{ $row['date']->toDateString() }}"
+                            class="{{ $isFuture ? 'bg-zinc-50 text-zinc-400 dark:bg-zinc-800/40 dark:text-zinc-500' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60' }}"
+                        >
+                            <td class="px-4 py-3">
+                                <span class="{{ ($isWeekend || $isHoliday) ? 'text-red-600 dark:text-red-400 font-medium' : '' }}">
+                                    {{ $row['date']->format('d M Y') }}
+                                </span>
+                                @if ($isHoliday)
+                                    <span class="ms-2 text-xs text-red-500 dark:text-red-400">{{ __('Holiday') }}</span>
+                                @elseif ($isWeekend)
+                                    <span class="ms-2 text-xs text-red-500 dark:text-red-400">{{ __('Weekend') }}</span>
+                                @endif
                             </td>
                             <td class="px-4 py-3">
-                                <flux:badge color="{{ $attendance->status === 'present' ? 'green' : 'gray' }}">
-                                    {{ ucfirst($attendance->status) }}
-                                </flux:badge>
+                                @if ($attendance)
+                                    <flux:badge color="{{ $attendance->status === 'present' ? 'green' : 'gray' }}">
+                                        {{ ucfirst($attendance->status) }}
+                                    </flux:badge>
+                                @else
+                                    <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
+                                        {{ $isFuture ? __('Not started') : __('No record') }}
+                                    </flux:text>
+                                @endif
                             </td>
-                            <td class="px-4 py-3 text-zinc-700 dark:text-zinc-300">
-                                {{ $attendance->check_in_at?->timezone('Asia/Jakarta')->format('H:i') ?? __('—') }}
+                            <td class="px-4 py-3">
+                                {{ $attendance?->check_in_at?->timezone('Asia/Jakarta')->format('H:i') ?? __('—') }}
                             </td>
-                            <td class="px-4 py-3 text-zinc-700 dark:text-zinc-300">
-                                {{ $attendance->check_out_at?->timezone('Asia/Jakarta')->format('H:i') ?? __('—') }}
+                            <td class="px-4 py-3">
+                                {{ $attendance?->check_out_at?->timezone('Asia/Jakarta')->format('H:i') ?? __('—') }}
                             </td>
                         </tr>
                     @empty
@@ -146,10 +192,6 @@ new class extends Component {
                     @endforelse
                 </tbody>
             </table>
-        </div>
-
-        <div class="px-4 py-3">
-            {{ $this->attendances->links() }}
         </div>
     </div>
 </section>
