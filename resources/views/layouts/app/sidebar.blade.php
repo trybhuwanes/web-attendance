@@ -64,6 +64,14 @@
                         >
                             {{ __('Monthly Attendance') }}
                         </flux:sidebar.item>
+                        <flux:sidebar.item
+                            icon="inbox"
+                            :href="route('attendance.requests')"
+                            :current="request()->routeIs('attendance.requests')"
+                            wire:navigate
+                        >
+                            {{ __('Attendance Requests') }}
+                        </flux:sidebar.item>
                     </flux:sidebar.group>
                 @endif
             </flux:sidebar.nav>

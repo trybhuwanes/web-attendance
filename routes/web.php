@@ -21,6 +21,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::livewire('attendance/report', 'pages::attendance.report')->name('attendance.report');
     Route::livewire('attendance/report/monthly', 'pages::attendance.monthly-report')->name('attendance.report.monthly');
     Route::livewire('attendance/report/monthly/{employee}', 'pages::attendance.monthly-detail')->name('attendance.report.monthly.detail');
+    Route::livewire('attendance/requests', 'pages::attendance.requests')->name('attendance.requests');
     Route::livewire('users/create', 'pages::users.create')->name('users.create');
 });
 
