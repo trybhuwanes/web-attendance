@@ -3,6 +3,7 @@
 use App\Models\Attendance;
 use App\Models\AttendanceRequest;
 use App\Models\Employee;
+use App\Models\Holiday;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
@@ -12,7 +13,7 @@ it('allows an employee to submit a sick request for a date', function () {
     $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'employee']);
 
     Livewire::actingAs($user)
-        ->test('pages::attendance.index')
+        ->test('pages::attendance.employee-requests')
         ->set('requestDate', '2026-01-12')
         ->set('requestType', 'sick')
         ->call('submitRequest')
@@ -35,7 +36,7 @@ it('prevents duplicate requests for the same date', function () {
     ]);
 
     Livewire::actingAs($user)
-        ->test('pages::attendance.index')
+        ->test('pages::attendance.employee-requests')
         ->set('requestDate', '2026-01-12')
         ->set('requestType', 'leave')
         ->call('submitRequest')
@@ -54,10 +55,39 @@ it('shows request history on the employee attendance page', function () {
     ]);
 
     Livewire::actingAs($user)
-        ->test('pages::attendance.index')
+        ->test('pages::attendance.employee-requests')
         ->assertSee('20 Jan 2026')
         ->assertSee('Leave')
         ->assertSee('Approved');
+});
+
+it('shows monthly attendance rows for the employee', function () {
+    Carbon::setTestNow(Carbon::parse('2026-01-10 09:00:00', 'Asia/Jakarta'));
+
+    $employee = Employee::factory()->create();
+    $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'employee']);
+
+    Attendance::factory()->create([
+        'employee_id' => $employee->id,
+        'date' => '2026-01-05',
+        'status' => 'present',
+        'check_in_at' => Carbon::parse('2026-01-05 08:00:00', 'Asia/Jakarta'),
+        'check_out_at' => Carbon::parse('2026-01-05 17:00:00', 'Asia/Jakarta'),
+    ]);
+
+    Holiday::factory()->create([
+        'date' => '2026-01-06',
+        'description' => 'Holiday',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test('pages::attendance.index')
+        ->set('month', 1)
+        ->set('year', 2026)
+        ->assertSee('05 Jan 2026')
+        ->assertSee('Present')
+        ->assertSee('06 Jan 2026')
+        ->assertSee('Holiday');
 });
 
 it('allows admin to approve requests and create attendance', function () {
