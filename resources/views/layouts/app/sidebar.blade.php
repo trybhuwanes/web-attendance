@@ -19,10 +19,18 @@
                         <flux:sidebar.item
                             icon="calendar"
                             :href="route('attendance.index')"
-                            :current="request()->routeIs('attendance.*')"
+                            :current="request()->routeIs('attendance.index')"
                             wire:navigate
                         >
                             {{ __('Attendance') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item
+                            icon="clipboard-document-check"
+                            :href="route('attendance.approval')"
+                            :current="request()->routeIs('attendance.approval')"
+                            wire:navigate
+                        >
+                            {{ __('Attendance Approval') }}
                         </flux:sidebar.item>
                     @endif
                 </flux:sidebar.group>
@@ -36,6 +44,14 @@
                             wire:navigate
                         >
                             {{ __('Employees') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item
+                            icon="calendar"
+                            :href="route('holidays.index')"
+                            :current="request()->routeIs('holidays.*')"
+                            wire:navigate
+                        >
+                            {{ __('Holidays') }}
                         </flux:sidebar.item>
                         <flux:sidebar.item
                             icon="user-plus"
@@ -78,7 +94,7 @@
 
             <flux:spacer />
 
-            <flux:sidebar.nav>
+            {{-- <flux:sidebar.nav>
                 <flux:sidebar.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
                     {{ __('Repository') }}
                 </flux:sidebar.item>
@@ -86,7 +102,7 @@
                 <flux:sidebar.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
                     {{ __('Documentation') }}
                 </flux:sidebar.item>
-            </flux:sidebar.nav>
+            </flux:sidebar.nav> --}}
 
             <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
         </flux:sidebar>
